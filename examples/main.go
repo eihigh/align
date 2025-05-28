@@ -64,6 +64,10 @@ func main() {
 	if err := status(); err != nil {
 		panic(err)
 	}
+
+	if err := wrap(); err != nil {
+		panic(err)
+	}
 }
 
 func inset() error {
@@ -89,5 +93,29 @@ func status() error {
 	img.fill(title, red)
 	img.fill(portrait, green)
 	img.fill(btn, magenta)
+	return img.save()
+}
+
+func wrap() error {
+	screen := align.WH(100, 100) // blue
+	w := align.NewWrapper(screen.Inset(10), 0, 0,
+		func(a, b align.Rect[int]) align.Rect[int] {
+			return a.StackX(b, 1, 0).Add(align.XY(5, 0))
+		},
+		func(a, b align.Rect[int]) align.Rect[int] {
+			return a.StackY(b, 0, 1).Add(align.XY(0, 5))
+		},
+	)
+	for range 8 {
+		if !w.Add(align.WH(20, 20)) { // magenta
+			break
+		}
+	}
+
+	img := newImg("wrap", 100, 100)
+	img.fill(screen, blue)
+	for _, r := range w.Rects() {
+		img.fill(r, magenta)
+	}
 	return img.save()
 }

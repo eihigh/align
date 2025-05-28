@@ -3,7 +3,7 @@
 <table>
 <tr>
 <th>Code</th>
-<th>Screenshot</th>
+<th>Result</th>
 </tr>
 <tr>
 <td>
@@ -37,3 +37,31 @@ btn := align.WH(20, 10).Nest(screen.Inset(10), right, bottom) // magenta
 ![](/examples/status.png)
 
 </td>
+</tr>
+<tr>
+<td>
+
+```go
+screen := align.WH(100, 100) // blue
+w := align.NewWrapper(screen.Inset(10), 0, 0,
+	func(a, b align.Rect[int]) align.Rect[int] {
+		return a.StackX(b, 1, 0).Add(align.XY(5, 0))
+	},
+	func(a, b align.Rect[int]) align.Rect[int] {
+		return a.StackY(b, 0, 1).Add(align.XY(0, 5))
+	},
+)
+for range 8 {
+	if !w.Add(align.WH(20, 20)) { // magenta
+		break
+	}
+}
+```
+
+</td>
+<td>
+
+![](/examples/wrap.png)
+
+</td>
+</tr>
