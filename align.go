@@ -4,7 +4,10 @@ import "github.com/eihigh/ng"
 
 // Union returns the smallest rectangle containing all input rectangles.
 func Union[S ng.Scalar](rs ...Rect[S]) Rect[S] {
-	r := Rect[S]{}
+	if len(rs) == 0 {
+		return Rect[S]{}
+	}
+	r := rs[0]
 	for _, rr := range rs {
 		r.Min.X = min(r.Min.X, rr.Min.X)
 		r.Min.Y = min(r.Min.Y, rr.Min.Y)

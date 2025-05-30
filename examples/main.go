@@ -60,12 +60,13 @@ func main() {
 	if err := inset(); err != nil {
 		panic(err)
 	}
-
 	if err := status(); err != nil {
 		panic(err)
 	}
-
 	if err := wrap(); err != nil {
+		panic(err)
+	}
+	if err := title(); err != nil {
 		panic(err)
 	}
 }
@@ -117,5 +118,26 @@ func wrap() error {
 	for _, r := range w.Rects() {
 		img.fill(r, magenta)
 	}
+	return img.save()
+}
+
+func title() error {
+	screen := align.WH(100, 100) // blue
+	logo, menu := screen.CutTopByRate(0.5)
+	logo = align.WH(60, 30).CenterOf(logo) // yellow
+	menu = menu.Inset(5)
+	off := align.XY(0, 4)
+	newGame := align.WH(30, 8).Nest(menu, mid, top)                        // red
+	continueGame := align.WH(30, 8).StackY(newGame, mid, bottom).Add(off)  // red
+	exitGame := align.WH(30, 8).StackY(continueGame, mid, bottom).Add(off) // red
+	menu = align.Union(newGame, continueGame, exitGame).Outset(5)          // cyan
+
+	img := newImg("title", 100, 100)
+	img.fill(screen, blue)
+	img.fill(logo, yellow)
+	img.fill(menu, cyan)
+	img.fill(newGame, red)
+	img.fill(continueGame, red)
+	img.fill(exitGame, red)
 	return img.save()
 }
