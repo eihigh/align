@@ -9,14 +9,6 @@ import (
 	"github.com/eihigh/align"
 )
 
-const (
-	top    = 0.0
-	mid    = 0.5
-	bottom = 1.0
-	left   = 0.0
-	right  = 1.0
-)
-
 var (
 	red     = color.RGBA{255, 0, 0, 255}
 	green   = color.RGBA{0, 255, 0, 255}
@@ -38,8 +30,8 @@ func newImg(name string, w, h int) img {
 	}
 }
 
-func (i *img) fill(r align.Rect[int], c color.Color) {
-	for p := range r.Points() {
+func (i *img) fill(r align.Node[int], c color.Color) {
+	for p := range r.Bounds().Points() {
 		i.img.Set(p.X, p.Y, c)
 	}
 }
@@ -82,11 +74,12 @@ func inset() error {
 }
 
 func status() error {
-	screen := align.WH(100, 100)
-	topBar, screen := screen.CutTop(10)
-	title := align.WH(30, 10).CenterOf(topBar)
-	portrait := align.WH(20, 30).Nest(screen.Inset(10), left, top)
-	btn := align.WH(20, 10).Nest(screen.Inset(10), right, bottom)
+	screen := align.WH(100, 100)      // blue
+	topBar, screen := screen.CutY(10) // cyan
+	uiSpace := screen.Inset(10)
+	title := align.WH(30, 10).CenterOf(topBar)       // red
+	portrait := align.WH(20, 30).Nest(uiSpace, 0, 0) // green
+	btn := align.WH(20, 10).Nest(uiSpace, 1, 1)      // magenta
 
 	img := newImg("status", 100, 100)
 	img.fill(screen, blue)
@@ -99,23 +92,24 @@ func status() error {
 
 func wrap() error {
 	screen := align.WH(100, 100) // blue
-	w := align.NewWrapper(screen.Inset(10), 0, 0,
-		func(a, b align.Rect[int]) align.Rect[int] {
-			return a.StackX(b, 1, 0).Add(align.XY(5, 0))
+	w := align.NewWrapper(screen, 0, 0,
+		func(a, b *align.Rect[int]) { // stack
+			a.StackX(b, 1, .5).Add(align.XY(4, 0))
 		},
-		func(a, b align.Rect[int]) align.Rect[int] {
-			return a.StackY(b, 0, 1).Add(align.XY(0, 5))
+		func(a, b *align.Rect[int]) { // wrap
+			a.StackY(b, 0, 1).Add(align.XY(0, 4))
 		},
 	)
 	for range 8 {
-		if !w.Add(align.WH(20, 20)) { // magenta
+		if !w.Add(align.WH(25, 25)) { // magenta
 			break
 		}
 	}
+	w.Slice().CenterOf(screen)
 
 	img := newImg("wrap", 100, 100)
 	img.fill(screen, blue)
-	for _, r := range w.Rects() {
+	for _, r := range w.Slice() {
 		img.fill(r, magenta)
 	}
 	return img.save()
@@ -123,19 +117,21 @@ func wrap() error {
 
 func title() error {
 	screen := align.WH(100, 100) // blue
-	logo, menu := screen.CutTopByRate(0.5)
+	logo, menuSpace := screen.CutYByRate(0.5)
 	logo = align.WH(60, 30).CenterOf(logo) // yellow
-	menu = menu.Inset(5)
+
 	off := align.XY(0, 4)
-	newGame := align.WH(30, 8).Nest(menu, mid, top)                        // red
-	continueGame := align.WH(30, 8).StackY(newGame, mid, bottom).Add(off)  // red
-	exitGame := align.WH(30, 8).StackY(continueGame, mid, bottom).Add(off) // red
-	menu = align.Union(newGame, continueGame, exitGame).Outset(5)          // cyan
+	newGame := align.WH(30, 8)                                       // red
+	continueGame := align.WH(40, 8).StackY(newGame, .5, 1).Add(off)  // red
+	exitGame := align.WH(25, 8).StackY(continueGame, .5, 1).Add(off) // red
+	menuItems := align.Slice[int]{newGame, continueGame, exitGame}
+	menuItems.CenterOf(menuSpace)
+	menuWindow := menuItems.Outset(5) // cyan
 
 	img := newImg("title", 100, 100)
 	img.fill(screen, blue)
 	img.fill(logo, yellow)
-	img.fill(menu, cyan)
+	img.fill(menuWindow, cyan)
 	img.fill(newGame, red)
 	img.fill(continueGame, red)
 	img.fill(exitGame, red)

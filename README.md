@@ -12,10 +12,12 @@ A lightweight, framework-agnostic UI layout library for Go
 - `CenterOf` - Center a rectangle within another
 - `Nest` - Position a rectangle within another at a relative position
 - `StackX/Y` - Stack rectangles horizontally or vertically
+- `Clamp` - Constrain a rectangle within bounds while keeping its size
+- `Anchor` - Get a point at a relative position within a rectangle
 
 ### Cutting
-- `CutLeft/Top/Right/Bottom` - Split rectangles into strips
-- `CutLeftByRate/TopByRate/RightByRate/BottomByRate` - Split by rate
+- `CutX/Y` - Split rectangles horizontally/vertically
+- `CutXByRate/YByRate` - Split by rate
 
 ### Sizing
 - `Inset/Outset` - Shrink or expand rectangles
@@ -28,14 +30,21 @@ A lightweight, framework-agnostic UI layout library for Go
 - `Repeat` - Create a grid of copies
 - `RepeatX/Y` - Create horizontal or vertical copies
 
-### Utilities
-- `Union` - Get the smallest rectangle containing all inputs
-- `Intersect` - Get the largest rectangle contained by all inputs
-- `Clamp` - Constrain a rectangle within bounds while keeping its size
-- `Anchor` - Get a point at a relative position within a rectangle
+### Containers
+- `Slice[S]` - A slice of nodes that can be aligned and moved together
+- `Map[S]` - A map of named nodes that can be aligned and moved together
+- Both implement the same alignment methods as `Rect` (Align, CenterOf, Nest, StackX/Y, Clamp)
+- `Last()` for Slice
 
 ### Wrapper
 The `Wrapper` type helps arrange multiple rectangles within bounds, automatically handling line wrapping when items don't fit.
+
+### Point Operations
+- `Add/Sub` - Vector addition and subtraction
+- `Scale` - Multiply by a scalar
+- `Mul/Div` - Component-wise multiplication and division
+- `In` - Check if point is within a rectangle
+- `Eq` - Check equality
 
 ## Examples
 
@@ -46,6 +55,19 @@ The `Wrapper` type helps arrange multiple rectangles within bounds, automaticall
 r1 := align.XYWH(10, 20, 100, 50)  // x=10, y=20, width=100, height=50
 r2 := align.WH(200, 100)           // x=0, y=0, width=200, height=100
 r3 := align.XYXY(10, 10, 110, 60)  // x=10, y=10, width=100, height=50
+```
+
+### Basic Point Creation
+
+```go
+// Create points
+p1 := align.XY(10, 20)              // x=10, y=20
+p2 := align.Point[int]{X: 5, Y: 15} // x=5, y=15
+
+// Point operations
+sum := p1.Add(p2)                   // (15, 35)
+diff := p1.Sub(p2)                  // (5, 5)
+scaled := p1.Scale(2)               // (20, 40)
 ```
 
 ### Alignment
@@ -71,10 +93,10 @@ bottomCenter = button.Nest(container, 0.5, 1)
 ```go
 // Create a header/content layout
 screen := align.WH(800, 600)
-header, content := screen.CutTop(60)
+header, content := screen.CutY(60)
 
 // Create a sidebar layout
-sidebar, main := content.CutLeft(200)
+sidebar, main := content.CutX(200)
 
 // Split into grid
 grid := screen.Split(3, 3, 10, 10)  // 3x3 grid with 10px gaps
@@ -96,13 +118,13 @@ withShadow := rect.Outset(5)
 ```go
 bounds := align.WH(800, 600)
 wrapper := align.NewWrapper(bounds, 0, 0,
-    func(a, b align.Rect[int]) align.Rect[int] {
+    func(a, b *align.Rect[int]) {
         // Stack horizontally
-        return a.StackX(b, 1, 0.5)
+        a.StackX(b, 1, 0.5).Add(align.XY(4, 0))
     },
-    func(a, b align.Rect[int]) align.Rect[int] {
+    func(a, b *align.Rect[int]) {
         // Wrap to next line
-        return a.StackY(b, 0, 1)
+        a.StackY(b, 0, 1).Add(align.XY(0, 4))
     },
 )
 
@@ -115,7 +137,29 @@ for _, size := range sizes {
 }
 
 // Get all positioned rectangles
-rects := wrapper.Rects()
+rects := wrapper.Slice()
+```
+
+### Working with Containers
+
+```go
+// Using Slice
+rects := align.Slice[int]{
+    align.WH(100, 50),
+    align.WH(80, 40),
+    align.WH(120, 60),
+}
+// Move all rectangles together
+rects.CenterOf(screen)
+
+// Using Map
+ui := align.Map[int]{
+    "header": align.WH(800, 60),
+    "sidebar": align.WH(200, 540),
+    "content": align.WH(600, 540),
+}
+// Access individual elements
+ui["header"].Nest(screen, 0.5, 0)
 ```
 
 ## Type Conversions
